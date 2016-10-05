@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <sys/sysinfo.h>
 
 
 #ifndef HOST_NAME_MAX
@@ -37,79 +38,32 @@ int function_call () {
 			return(0);
 		} else if (strcmp(cmd, "list") == 0) {
 			printf("memory\n");
-			/*
-			  DIR* dirp = opendir(plugin_dir);
-			if (dirp == NULL) {
-				printf("# Cannot open plugin dir\n");
-				return(0);
-			}
-			{
-			struct dirent* dp;
-			while ((dp = readdir(dirp)) != NULL) {
-				char* plugin_filename = dp->d_name;;
-*/
-				//if (plugin_filename[0] == '.') {
-					/* No dotted plugin */
-				//	continue;
-			//	}
-/*
-				snprintf(cmdline, LINE_MAX, "%s/%s", plugin_dir, plugin_filename);
-				if (access(cmdline, X_OK) == 0) {
-					if(extension_stripping) { */
-						/* Strip after the last . */
-				/*		char *last_dot_idx = strrchr(plugin_filename, '.');
-						if (last_dot_idx != NULL) {
-							*last_dot_idx = '\0';
-						}
-					}
-					printf("%s ", plugin_filename);
-				}
-			}
-			closedir(dirp);
-			}
-			putchar('\n');*/
 		} else if (
 				strcmp(cmd, "config") == 0 ||
 				strcmp(cmd, "fetch") == 0
 			) {
-			char cmdline[LINE_MAX];
-			char *argv[3] = { 0, };
-			pid_t pid;
-			if(arg == NULL) {
-				printf("# no plugin given\n");
-				continue;
-			}
-			if(arg[0] == '.' || strchr(arg, '/') != NULL) {
-				printf("# invalid plugin character\n");
-				continue;
-			} 
-			if (! extension_stripping || find_plugin_with_basename(cmdline, plugin_dir, arg) == 0) {
-				/* extension_stripping failed, using the plain method */
-				snprintf(cmdline, LINE_MAX, "%s/%s", plugin_dir, arg);
-			}
-			if (access(cmdline, X_OK) == -1) {
-				printf("# unknown plugin: %s\n", arg);
-				continue;
-			}
-			Now is the time to set environnement */
-			setenvvars_conf(arg);
-			argv[0] = arg;
-			argv[1] = cmd;
-
-			/* Using posix_spawnp() here instead of fork() since we will
-			 * do a little more than a mere exec --> setenvvars_conf() */
-			if (0 == posix_spawn(&pid, cmdline,
-					NULL, /* const posix_spawn_file_actions_t *file_actions, */
-					NULL, /* const posix_spawnattr_t *restrict attrp, */
-					argv, environ)) {
-
-				/* Wait for completion */
-				waitpid(pid, NULL, 0);
+				long int total_memory = get_phys_pages()*getpagesize();
+				long int free_memory = get_avphys_pages()*getpagesize();
+				long int used_memory = total_memory - free_memory;
+				
+			if (strcmp(cmd,"fetch")==0 && (strcmp(arg,"memory")==0)) {
+				printf("used.value %ld\n", used_memory);
+				printf("free.value %ld\n",free_memory);
 			} else {
-				printf("# fork failed\n");
-				continue;
+				printf("graph_args --base 1024 -1 0 --upper-limit %ld\n",total_memory);
+				printf("graph_vlabel Bytes\n"); 
+				printf("graph_title Memory usage\n"); 
+				printf("graph_category system\n"); 
+				printf("graph_info This graph shows this machine memory.\n"); 
+				printf("graph_order used free\n"); 
+				printf("used.label used\n");
+				printf("used.draw STACK\n"); 
+				printf("used.info Used memory.\n"); 
+				printf("free.label free\n"); 
+				printf("free.draw STACK\n"); 
+				printf("free.info Free memory.\n"); 
+				printf(".\n");
 			}
-			printf(".\n");
 		} else if (strcmp(cmd, "cap") == 0) {
 			printf("cap multigraph dirtyconfig\n"); 
 		} else {

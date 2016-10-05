@@ -12,11 +12,14 @@
 
 static char* host = "";
 
-int function_call (char * line) {
+int function_call () {
+	int LINE_MAX=100;
+	char line[LINE_MAX];
 
-		char* cmd;
-		char* arg;
-
+	printf("# munin node at %s\n", host);
+	while (fflush(stdout), fgets(line, LINE_MAX, stdin) != NULL) {
+		char * cmd;
+		char * arg;
 		cmd = strtok(line, " \t\n\r");
 		if(cmd == NULL)
 			arg = NULL;
@@ -28,11 +31,12 @@ int function_call (char * line) {
 		} else if (strcmp(cmd, "version") == 0) {
 			printf("zahid node on %s version: 8.48\n", host);
 		} else if (strcmp(cmd, "nodes") == 0) {
-		printf("%s\n", host);
+			printf("%s\n", host);
 			printf(".\n");
 		} else if (strcmp(cmd, "quit") == 0) {
 			return(0);
 		} else if (strcmp(cmd, "list") == 0) {
+			printf("memory\n");
 			/*
 			  DIR* dirp = opendir(plugin_dir);
 			if (dirp == NULL) {
@@ -63,7 +67,7 @@ int function_call (char * line) {
 			}
 			closedir(dirp);
 			}
-			putchar('\n');
+			putchar('\n');*/
 		} else if (
 				strcmp(cmd, "config") == 0 ||
 				strcmp(cmd, "fetch") == 0
@@ -78,42 +82,40 @@ int function_call (char * line) {
 			if(arg[0] == '.' || strchr(arg, '/') != NULL) {
 				printf("# invalid plugin character\n");
 				continue;
-			} */
-		//	if (! extension_stripping || find_plugin_with_basename(cmdline, plugin_dir, arg) == 0) {
+			} 
+			if (! extension_stripping || find_plugin_with_basename(cmdline, plugin_dir, arg) == 0) {
 				/* extension_stripping failed, using the plain method */
-			//	snprintf(cmdline, LINE_MAX, "%s/%s", plugin_dir, arg);
-		//	}
-	/*		if (access(cmdline, X_OK) == -1) {
+				snprintf(cmdline, LINE_MAX, "%s/%s", plugin_dir, arg);
+			}
+			if (access(cmdline, X_OK) == -1) {
 				printf("# unknown plugin: %s\n", arg);
 				continue;
 			}
-*/
-			/* Now is the time to set environnement */
-	/*		setenvvars_conf(arg);
+			Now is the time to set environnement */
+			setenvvars_conf(arg);
 			argv[0] = arg;
 			argv[1] = cmd;
-*/
+
 			/* Using posix_spawnp() here instead of fork() since we will
 			 * do a little more than a mere exec --> setenvvars_conf() */
-	//		if (0 == posix_spawn(&pid, cmdline,
-		//			NULL, /* const posix_spawn_file_actions_t *file_actions, */
-					//NULL, /* const posix_spawnattr_t *restrict attrp, */
-			//		argv, environ)) {
+			if (0 == posix_spawn(&pid, cmdline,
+					NULL, /* const posix_spawn_file_actions_t *file_actions, */
+					NULL, /* const posix_spawnattr_t *restrict attrp, */
+					argv, environ)) {
 
 				/* Wait for completion */
-				//waitpid(pid, NULL, 0);
-			//} else {
-			//	printf("# fork failed\n");
-		//		continue;
-	//		}
-	//		printf(".\n");
+				waitpid(pid, NULL, 0);
+			} else {
+				printf("# fork failed\n");
+				continue;
+			}
+			printf(".\n");
 		} else if (strcmp(cmd, "cap") == 0) {
-			printf("cap multigraph dirtyconfig\n");
-		} else if (strcmp(cmd, "spoolfetch") == 0) {
-			printf("# not implem yet cmd: %s\n", cmd);
+			printf("cap multigraph dirtyconfig\n"); 
 		} else {
 			printf("# Unknown cmd: %s. Try cap, list, nodes, config, fetch, version or quit\n", cmd);
 		}
+	}
 		return 0;
 	
 }
@@ -132,6 +134,6 @@ int main() {
 		}
 	}
 
-	function_call("config memory");
+	function_call("config memory\n");
 	return 0;
 }

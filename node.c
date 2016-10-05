@@ -9,6 +9,8 @@
 #include <errno.h>
 #include <fcntl.h> // for open
 #include <unistd.h> // for close
+#include <string.h>
+#include "getip.c"
 
 #define SERVER_PORT 4949
 
@@ -19,10 +21,13 @@ int main()
 	//socket
 	int sock_listen;
     int yes = 1;
+    char * ip;
+    ipv4(&ip);
+    printf("%s",ip);
 	//address
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(SERVER_PORT);
-	sin.sin_addr.s_addr = inet_addr("192.168.2.117");
+	sin.sin_addr.s_addr = inet_addr(ip);
 	if((sock_listen = socket(AF_INET, SOCK_STREAM, 0)) < 0){
 		printf("Error Create Socket\n");
 		exit(errno);
@@ -46,7 +51,9 @@ int main()
 	while(1){
 		char buf[256];
         recv(client_accept, buf, sizeof(buf),0);
-		printf("%s",buf);
+		if(buf>0){
+            
+        }
 	}
     
 	close(sock_listen);

@@ -63,7 +63,13 @@ int main()
     int LINE_MAX=100;
     char buf[LINE_MAX];
     client_accept = accept(sock_listen, NULL, NULL);
-    printf("# munin node at %s\n", host);
+    char * sendx = NULL;
+    /*strcopy(sendx,"#munin node at ");
+    strcon()*/
+
+    send(client_accept,"# munin node at ", sizeof("# munin node at "), 0);
+    send(client_accept,host, sizeof(host), 0);
+    send(client_accept,"\n", sizeof("\n"), 0);
     while(recv(client_accept, buf, sizeof(buf),0)){
         char * cmd;
         char * arg;
@@ -74,57 +80,80 @@ int main()
             arg = strtok(NULL, " \t\n\r");
 
         if (!cmd || strlen(cmd) == 0) {
-            printf("# empty cmd\n");
+            send(client_accept,"# empty cmd\n", sizeof("# empty cmd\n"), 0);
         } else if (strcmp(cmd, "version") == 0) {
-            printf("TBM node on %s version: 8.48\n", host);
+            printf("%s version: 8.48\n", host);
+            send(client_accept,"TBM node on ", sizeof("TBM node on "), 0);
+            send(client_accept, host, sizeof(host), 0);
+            send(client_accept, "version: 8.48\n", sizeof("version: 8.48\n"), 0);
         } else if (strcmp(cmd, "nodes") == 0) {
-            printf("%s\n", host);
-            printf(".\n");
+            send(client_accept, strcat(strcat(host,"\n"),".\n"), sizeof(strcat(strcat(host,"\n"),".\n")), 0);
         } else if (strcmp(cmd, "quit") == 0) {
             close(sock_listen);
             return(0);
         } else if (strcmp(cmd, "list") == 0) {
-            printf("memory\n");
-        } else if (
-                strcmp(cmd, "config") == 0 ||
-                strcmp(cmd, "fetch") == 0
-            ) {
+            send(client_accept, "memory\n", sizeof("memory\n"), 0);
+        } else if (strcmp(cmd, "config") == 0 || strcmp(cmd, "fetch") == 0) {
                 long int total_memory = get_phys_pages()*getpagesize();
                 long int free_memory = get_avphys_pages()*getpagesize();
                 long int used_memory = total_memory - free_memory;
-                
+                char  use_memory[100];
+                sprintf(use_memory, "%ld",used_memory);
+                char  fre_memory[100];
+                sprintf(fre_memory, "%ld\n",free_memory);
+                char  tot_memory[150];
+                sprintf(tot_memory, "%ld\n",total_memory);
             if (strcmp(cmd,"fetch")==0) {
                 if(arg != NULL){
                     if(strcmp(arg, "memory") == 0){
-                        printf("used.value %ld\n", used_memory);
-                        printf("free.value %ld\n",free_memory);
+                        send(client_accept, "used.value ", sizeof("used.value "), 0);
+                        send(client_accept, use_memory, strlen(use_memory),0);
+                        send(client_accept, "\nfree.value ", sizeof("\nfree.value "), 0);
+                        send(client_accept, fre_memory, strlen(fre_memory),0);
                     }else{
-                        printf("#Unknown argument for fetch : %s. Try memory\n", arg);
+                        send(client_accept, "#Unknown argument for fetch. Try memory\n", sizeof("#Unknown argument for fetch. Try memory\n"), 0);
                     }
                 }else{
-                    printf("#no argument\n");
+                    send(client_accept, "#no argument\n", sizeof("#no argument\n"), 0);
                 }
             } else {
-                printf("used.value %ld\n", used_memory);
+               printf("used.value %ld\n", used_memory);
+                send(client_accept, "used.value ", sizeof("used.value"), 0 );
+                send(client_accept, use_memory, strlen(use_memory), 0 );
                 printf("free.value %ld\n",free_memory);
+                send(client_accept, "\nfree.value ", sizeof("\nfree.value"), 0 );
+                send(client_accept, fre_memory, strlen(fre_memory), 0 );
                 printf("graph_args --base 1024 -1 0 --upper-limit %ld\n",total_memory);
-                printf("graph_vlabel Bytes\n"); 
-                printf("graph_title Memory usage\n"); 
-                printf("graph_category system\n"); 
-                printf("graph_info This graph shows this machine memory.\n"); 
-                printf("graph_order used free\n"); 
+                send(client_accept, "\ngraph_args --base 1024 -1 0 --upper-limit ", sizeof("\ngraph_args --base 1024 -1 0 --upper-limit "), 0 );
+                send(client_accept, tot_memory, strlen(tot_memory), 0 );
+                printf("graph_vlabel Bytes\n");
+                send(client_accept, "graph_vlabel Bytes\n", sizeof("graph_vlabel Bytes\n"), 0 );
+                printf("graph_title Memory usage\n");
+                send(client_accept, "graph_title Memory usage\n", sizeof("graph_title Memory usage\n"), 0 );
+                printf("graph_category system\n");
+                send(client_accept, "graph_category system\n", sizeof("graph_category system\n"), 0 );
+                printf("graph_info This graph shows this machine memory.\n");
+                send(client_accept, "graph_info This graph shows this machine memory.\n", sizeof("graph_info This graph shows this machine memory.\n"), 0 );
+                printf("graph_order used free\n");
+                send(client_accept, "graph_order used free\n", sizeof("graph_order used free\n"), 0 );
                 printf("used.label used\n");
+                send(client_accept, "used.label used\n", sizeof("used.label used\n"), 0 );
                 printf("used.draw STACK\n"); 
+                send(client_accept, "used.draw STACK\n", sizeof("used.draw STACK\n"), 0 );
                 printf("used.info Used memory.\n"); 
+                send(client_accept, "graph_order used free\n", sizeof("graph_order used free\n"), 0 );
                 printf("free.label free\n"); 
+                send(client_accept, "free.label free\n", sizeof("free.label free\n"), 0 );
                 printf("free.draw STACK\n"); 
-                printf("free.info Free memory.\n"); 
+                send(client_accept, "free.draw STACK\n", sizeof("free.draw STACK\n"), 0 );
+                printf("free.info Free memory.\n");
+                send(client_accept, "free.info Free memory.\n.\n", sizeof("free.info Free memory.\n.\n"), 0 ); 
                 printf(".\n");
             }
         } else if (strcmp(cmd, "cap") == 0) {
-            printf("cap multigraph dirtyconfig\n"); 
+            send(client_accept, "cap multigraph dirtyconfig\n", sizeof("cap multigraph dirtyconfig\n"), 0); 
         } else {
-            printf("# Unknown command: %s. Try cap, list, nodes, config, fetch, version or quit\n", cmd);
+            send(client_accept, "# Unknown command. Try cap, list, nodes, config, fetch, version or quit\n", sizeof("# Unknown command. Try cap, list, nodes, config, fetch, version or quit\n"), 0);
         }
 	}
 	return 0;

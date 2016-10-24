@@ -64,8 +64,7 @@ int main()
     char buf[LINE_MAX];
     client_accept = accept(sock_listen, NULL, NULL);
     printf("# munin node at %s\n", host);
-    while(1){
-        recv(client_accept, buf, sizeof(buf),0);
+    while(recv(client_accept, buf, sizeof(buf),0)){
         char * cmd;
         char * arg;
         cmd = strtok(buf, " \t\n\r");
@@ -77,7 +76,7 @@ int main()
         if (!cmd || strlen(cmd) == 0) {
             printf("# empty cmd\n");
         } else if (strcmp(cmd, "version") == 0) {
-            printf("zahid node on %s version: 8.48\n", host);
+            printf("TBM node on %s version: 8.48\n", host);
         } else if (strcmp(cmd, "nodes") == 0) {
             printf("%s\n", host);
             printf(".\n");
@@ -94,10 +93,20 @@ int main()
                 long int free_memory = get_avphys_pages()*getpagesize();
                 long int used_memory = total_memory - free_memory;
                 
-            if (strcmp(cmd,"fetch")==0 && (strcmp(arg,"memory")==0)) {
+            if (strcmp(cmd,"fetch")==0) {
+                if(arg != NULL){
+                    if(strcmp(arg, "memory") == 0){
+                        printf("used.value %ld\n", used_memory);
+                        printf("free.value %ld\n",free_memory);
+                    }else{
+                        printf("#Unknown argument for fetch : %s. Try memory\n", arg);
+                    }
+                }else{
+                    printf("#no argument\n");
+                }
+            } else {
                 printf("used.value %ld\n", used_memory);
                 printf("free.value %ld\n",free_memory);
-            } else {
                 printf("graph_args --base 1024 -1 0 --upper-limit %ld\n",total_memory);
                 printf("graph_vlabel Bytes\n"); 
                 printf("graph_title Memory usage\n"); 
@@ -115,7 +124,7 @@ int main()
         } else if (strcmp(cmd, "cap") == 0) {
             printf("cap multigraph dirtyconfig\n"); 
         } else {
-            printf("# Unknown cmd: %s. Try cap, list, nodes, config, fetch, version or quit\n", cmd);
+            printf("# Unknown command: %s. Try cap, list, nodes, config, fetch, version or quit\n", cmd);
         }
 	}
 	return 0;
